@@ -86,7 +86,8 @@
     import { PDFDocument } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
     const f8949Bytes = await fetch('/f8949.pdf').then(r => r.arrayBuffer());
 
-    async function addPage(output, data, type) {
+
+    async function generatePage(output, data, type) {
       if (data.length > 14) {
         throw new Error(`Expected data.length <= 14; Actual data.length: ${data.length}`);
       }
@@ -125,7 +126,7 @@
       // Save changes and copy into output
       form.updateFieldAppearances();
       const [page] = await output.copyPages(f8949, [pageNumber]);
-      output.addPage(page);
+      return page;
     }
 
     function download(file) {
@@ -137,8 +138,6 @@
 
     document.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();
-
-      const output = await PDFDocument.create();
 
       const form = new FormData(e.target);
       const shortFile = form.get('short');
@@ -167,13 +166,18 @@
       const chunkSize = 14;
       for (let i = 0; i < shortData.length; i += chunkSize) {
         const chunk = shortData.slice(i, i + chunkSize);
-        pagePromises.push(addPage(output, chunk, 'short'));
+        pagePromises.push(generatePage(output, chunk, 'short'));
       }
       for (let i = 0; i < longData.length; i += chunkSize) {
         const chunk = longData.slice(i, i + chunkSize);
-        pagePromises.push(addPage(output, chunk, 'long'));
+        pagePromises.push(generatePage(output, chunk, 'long'));
       }
-      await Promise.all(pagePromises);
+      const pages = await Promise.all(pagePromises);
+
+      const output = await PDFDocument.create();
+      for (const page of pages) {
+        output.addPage(page);
+      }
 
       output.save()
         .then(data => new File([data.buffer], 'f8949_filled', { type: 'application/pdf' }))
