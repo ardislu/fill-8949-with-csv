@@ -84,9 +84,7 @@
   <script type="module">
     import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
     import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
-    const f8949 = await fetch('/f8949.pdf')
-      .then(r => r.arrayBuffer())
-      .then(PDFDocument.load);
+    const f8949Bytes = await fetch('/f8949.pdf').then(r => r.arrayBuffer());
 
     // Use a custom id generator instead of crypto.randomUUID() to reduce PDF file size
     function* idGenerator() {
@@ -113,7 +111,7 @@
       }
     };
 
-    async function generatePage(data, type) {
+    async function generatePage(f8949, data, type) {
       const [page] = type === 'short' ? await f8949.copyPages(f8949, [0]) : await f8949.copyPages(f8949, [1]);
       cloneAnnotations(page);
 
@@ -158,6 +156,8 @@
     document.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();
 
+      const f8949 = await PDFDocument.load(f8949Bytes);
+
       const form = new FormData(e.target);
       const shortFile = form.get('short');
       const longFile = form.get('long');
@@ -168,11 +168,11 @@
       const chunkSize = 14;
       for (let i = 0; i < shortData.length; i += chunkSize) {
         const chunk = shortData.slice(i, i + chunkSize);
-        pagePromises.push(generatePage(chunk, 'short'));
+        pagePromises.push(generatePage(f8949, chunk, 'short'));
       }
       for (let i = 0; i < longData.length; i += chunkSize) {
         const chunk = longData.slice(i, i + chunkSize);
-        pagePromises.push(generatePage(chunk, 'long'));
+        pagePromises.push(generatePage(f8949, chunk, 'long'));
       }
       const pages = await Promise.all(pagePromises);
 
