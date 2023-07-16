@@ -136,6 +136,23 @@
       a.click();
     }
 
+    async function parseCsv(file, hasHeaders) {
+      const csv = await new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          header: false,
+          skipEmptyLines: 'greedy',
+          complete: results => resolve(results),
+          error: error => reject(error)
+        });
+      });
+
+      const data = csv.data;
+      if (hasHeaders) {
+        data.shift();
+      }
+      return data;
+    }
+
     document.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();
 
@@ -143,24 +160,7 @@
       const shortFile = form.get('short');
       const longFile = form.get('long');
       const hasHeaders = form.get('headers') === 'on';
-
-      async function parse(file) {
-        const csv = await new Promise((resolve, reject) => {
-          Papa.parse(file, {
-            header: false,
-            skipEmptyLines: 'greedy',
-            complete: results => resolve(results),
-            error: error => reject(error)
-          });
-        });
-
-        const data = csv.data;
-        if (hasHeaders) {
-          data.shift();
-        }
-        return data;
-      }
-      const [shortData, longData] = await Promise.all([parse(shortFile), parse(longFile)]);
+      const [shortData, longData] = await Promise.all([parseCsv(shortFile, hasHeaders), parseCsv(longFile, hasHeaders)]);
 
       const pagePromises = [];
       const chunkSize = 14;
