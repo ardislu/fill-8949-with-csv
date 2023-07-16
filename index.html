@@ -49,11 +49,28 @@
       font-weight: 700;
     }
 
-    .checkbox-container {
+    .inline-container {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
+    }
+
+    .inline-spinner {
+      display: none;
+      box-sizing: border-box;
+      block-size: 1em;
+      inline-size: 1em;
+      border: 0.25em solid transparent;
+      border-block-start: 0.25em solid black;
+      border-radius: 50%;
+      animation: spin 1s infinite;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </head>
@@ -72,12 +89,15 @@
       <label for="long">Long-term transactions</label>
       <input type="file" id="long" name="long" accept="text/csv" required>
 
-      <div class="checkbox-container">
+      <div class="inline-container">
         <input type="checkbox" id="headers" name="headers" checked>
         <label for="headers">Data has headers</label>
       </div>
 
-      <button>Download Filled Form 8949</button>
+      <div class="inline-container">
+        <button>Download Filled Form 8949</button>
+        <span class="inline-spinner"></span>
+      </div>
     </form>
   </main>
 
@@ -85,6 +105,9 @@
     import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
     import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
     const f8949Bytes = await fetch('/f8949.pdf').then(r => r.arrayBuffer());
+
+    const button = document.querySelector('button');
+    const spinner = document.querySelector('span.inline-spinner');
 
     // Use a custom id generator instead of crypto.randomUUID() to reduce PDF file size
     function* idGenerator() {
@@ -156,6 +179,9 @@
     document.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();
 
+      button.disabled = true;
+      spinner.style.display = 'inline-block';
+
       const f8949 = await PDFDocument.load(f8949Bytes);
 
       const form = new FormData(e.target);
@@ -184,9 +210,12 @@
       f8949.removePage(0);
       f8949.removePage(0);
 
-      f8949.save()
+      await f8949.save()
         .then(data => new File([data.buffer], 'f8949_filled', { type: 'application/pdf' }))
         .then(download);
+
+      button.disabled = false;
+      spinner.style.display = 'none';
     });
   </script>
 </body>
