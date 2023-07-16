@@ -83,49 +83,51 @@
 
   <script type="module">
     import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
-    import { PDFDocument } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
-    const f8949Bytes = await fetch('/f8949.pdf').then(r => r.arrayBuffer());
+    import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
+    const f8949 = await fetch('/f8949.pdf')
+      .then(r => r.arrayBuffer())
+      .then(PDFDocument.load);
 
-
-    async function generatePage(output, data, type) {
-      if (data.length > 14) {
-        throw new Error(`Expected data.length <= 14; Actual data.length: ${data.length}`);
+    // Use a custom id generator instead of crypto.randomUUID() to reduce PDF file size
+    function* idGenerator() {
+      let i = 0;
+      while (true) {
+        yield `f${i}`; // Must be unique within the PDF
+        i++;
       }
+    }
+    const annotationIds = idGenerator();
 
-      if (!(type === 'short' || type === 'long')) {
-        throw new Error(`Expected type === 'short' || type === 'long'; Actual type: ${type}`);
+    // Duplicate all annotations exactly, except for the "T" key. The "T" key ("text label") is used
+    // as a unique identifier for the annotation and must be updated or else all annotations with
+    // the same "T" key will have the same value.
+    // Original code from: https://github.com/Hopding/pdf-lib/issues/151
+    function cloneAnnotations(page) {
+      const form = page.doc.catalog.lookup(PDFName.of('AcroForm'), PDFDict);
+      const fields = form.lookup(PDFName.of('Fields'), PDFArray);
+      const annotations = page.node.Annots();
+      for (let i = 0; i < annotations.size(); i++) {
+        const a = annotations.lookup(i, PDFDict);
+        a.set(PDFName.of('T'), PDFString.of(annotationIds.next().value));
+        fields.push(a);
       }
+    };
 
-      // Prepare new PDF page to copy into output PDF
-      const f8949 = await PDFDocument.load(f8949Bytes);
-      const form = f8949.getForm();
-      const fields = form.getFields();
+    async function generatePage(data, type) {
+      const [page] = type === 'short' ? await f8949.copyPages(f8949, [0]) : await f8949.copyPages(f8949, [1]);
+      cloneAnnotations(page);
 
-      // Prepare counters
       let cellNumber = 0;
-      let offset;
-      let pageNumber;
-      if (type === 'short') {
-        offset = 5;
-        pageNumber = 0;
-      }
-      else {
-        offset = 127;
-        pageNumber = 1;
-      }
-
-      // Populate appropriate PDF form
+      const offset = 5; // To skip to the table annotations
+      const annots = page.node.Annots();
       for (const row of data) {
         for (const cell of row) {
-          fields[cellNumber + offset].setText(cell);
-          fields[cellNumber + offset].enableReadOnly();
+          const a = annots.lookup(cellNumber + offset, PDFDict);
+          a.set(PDFName.of('V'), PDFString.of(cell));
           cellNumber++;
         }
       }
 
-      // Save changes and copy into output
-      form.updateFieldAppearances();
-      const [page] = await output.copyPages(f8949, [pageNumber]);
       return page;
     }
 
@@ -166,20 +168,23 @@
       const chunkSize = 14;
       for (let i = 0; i < shortData.length; i += chunkSize) {
         const chunk = shortData.slice(i, i + chunkSize);
-        pagePromises.push(generatePage(output, chunk, 'short'));
+        pagePromises.push(generatePage(chunk, 'short'));
       }
       for (let i = 0; i < longData.length; i += chunkSize) {
         const chunk = longData.slice(i, i + chunkSize);
-        pagePromises.push(generatePage(output, chunk, 'long'));
+        pagePromises.push(generatePage(chunk, 'long'));
       }
       const pages = await Promise.all(pagePromises);
 
-      const output = await PDFDocument.create();
       for (const page of pages) {
-        output.addPage(page);
+        f8949.addPage(page);
       }
 
-      output.save()
+      // Remove the original 2 pages of the PDF
+      f8949.removePage(0);
+      f8949.removePage(0);
+
+      f8949.save()
         .then(data => new File([data.buffer], 'f8949_filled', { type: 'application/pdf' }))
         .then(download);
     });
