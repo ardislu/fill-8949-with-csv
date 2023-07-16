@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <title>fill-8949-with-csv</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+      background: hsl(216deg 50% 90%);
+      color: hsl(216deg 50% 10%);
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-block-end: 48px;
+    }
+
+    header * {
+      margin: 0;
+    }
+
+    main {
+      inline-size: min(1080px, 100% - 32px);
+      margin-inline: auto;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    form * {
+      inline-size: fit-content;
+    }
+
+    input[type="checkbox"] {
+      margin: 0;
+    }
+
+    .disclaimer {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>fill-8949-with-csv</h1>
+    <p class="disclaimer">This tool is for informational purposes only. This tool should not be relied on for tax, legal, or accounting advice.</p>
+  </header>
+
+  <main>
+    <form>
+      <label for="short">Short-term transactions</label>
+      <input type="file" id="short" name="short" accept="text/csv" required>
+
+      <label for="long">Long-term transactions</label>
+      <input type="file" id="long" name="long" accept="text/csv" required>
+
+      <div class="checkbox-container">
+        <input type="checkbox" id="headers" name="headers" checked>
+        <label for="headers">Data has headers</label>
+      </div>
+
+      <button>Download Filled Form 8949</button>
+    </form>
+  </main>
+
+  <script type="module">
+    import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
+    import { PDFDocument } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
+    const f8949Bytes = await fetch('/f8949.pdf').then(r => r.arrayBuffer());
+
+    async function addPage(output, data, type) {
+      if (data.length > 14) {
+        throw new Error(`Expected data.length <= 14; Actual data.length: ${data.length}`);
+      }
+
+      if (!(type === 'short' || type === 'long')) {
+        throw new Error(`Expected type === 'short' || type === 'long'; Actual type: ${type}`);
+      }
+
+      // Prepare new PDF page to copy into output PDF
+      const f8949 = await PDFDocument.load(f8949Bytes);
+      const form = f8949.getForm();
+      const fields = form.getFields();
+
+      // Prepare counters
+      let cellNumber = 0;
+      let offset;
+      let pageNumber;
+      if (type === 'short') {
+        offset = 5;
+        pageNumber = 0;
+      }
+      else {
+        offset = 127;
+        pageNumber = 1;
+      }
+
+      // Populate appropriate PDF form
+      for (const row of data) {
+        for (const cell of row) {
+          fields[cellNumber + offset].setText(cell);
+          fields[cellNumber + offset].enableReadOnly();
+          cellNumber++;
+        }
+      }
+
+      // Save changes and copy into output
+      form.updateFieldAppearances();
+      const [page] = await output.copyPages(f8949, [pageNumber]);
+      output.addPage(page);
+    }
+
+    function download(file) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file);
+      a.download = file.name;
+      a.click();
+    }
+
+    document.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const output = await PDFDocument.create();
+
+      const form = new FormData(e.target);
+      const shortFile = form.get('short');
+      const longFile = form.get('long');
+      const hasHeaders = form.get('headers') === 'on';
+
+      async function parse(file) {
+        const csv = await new Promise((resolve, reject) => {
+          Papa.parse(file, {
+            header: false,
+            skipEmptyLines: 'greedy',
+            complete: results => resolve(results),
+            error: error => reject(error)
+          });
+        });
+
+        const data = csv.data;
+        if (hasHeaders) {
+          data.shift();
+        }
+        return data;
+      }
+      const [shortData, longData] = await Promise.all([parse(shortFile), parse(longFile)]);
+
+      const pagePromises = [];
+      const chunkSize = 14;
+      for (let i = 0; i < shortData.length; i += chunkSize) {
+        const chunk = shortData.slice(i, i + chunkSize);
+        pagePromises.push(addPage(output, chunk, 'short'));
+      }
+      for (let i = 0; i < longData.length; i += chunkSize) {
+        const chunk = longData.slice(i, i + chunkSize);
+        pagePromises.push(addPage(output, chunk, 'long'));
+      }
+      await Promise.all(pagePromises);
+
+      output.save()
+        .then(data => new File([data.buffer], 'f8949_filled', { type: 'application/pdf' }))
+        .then(download);
+    });
+  </script>
+</body>
+
+</html>
