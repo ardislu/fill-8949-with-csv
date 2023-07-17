@@ -76,12 +76,17 @@
 </head>
 
 <body>
-  <header>
+  <section class="info card">
     <h1>fill-8949-with-csv</h1>
-    <p class="disclaimer">This tool is for informational purposes only. This tool should not be relied on for tax, legal, or accounting advice.</p>
-  </header>
+    <p class="disclaimer"><b>Disclaimer:</b> this tool is for informational purposes only. This tool should not be relied on for tax, legal, or accounting advice.</p>
+    <p class="privacy"><b>Privacy:</b> the CSV parsing and PDF filling operations occur client-side (i.e., within your web browser). Your CSV data is not uploaded to any server.</p>
+    <p class="source"><a href="https://github.com/ardislu/fill-8949-with-csv">Click here to view this tool's source code on GitHub.</a></p>
+  </section>
 
-  <main>
+  <main class="card">
+    <p class="directions"><b>Directions:</b> select CSV files containing data to populate the tables on page 1 (short-term transactions) and page 2 (long-term transactions) of
+      <a href="https://www.irs.gov/form8949">IRS Form 8949</a>. Click "Download Filled Form 8949" to download a copy of Form 8949 with the CSV data filled into it.
+    </p>
     <form>
       <label for="short">Short-term transactions</label>
       <input type="file" id="short" name="short" accept="text/csv" required>
