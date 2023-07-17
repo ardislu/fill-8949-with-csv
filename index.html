@@ -4,30 +4,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
   <link rel="icon" href="data:,">
   <title>fill-8949-with-csv</title>
   <style>
+    :root {
+      font-family: 'Inter', sans-serif;
+    }
+
+    @supports (font-variation-settings: normal) {
+      :root {
+        font-family: 'Inter var', sans-serif;
+      }
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
       background: hsl(216deg 50% 90%);
       color: hsl(216deg 50% 10%);
-    }
-
-    header {
+      min-block-size: 100dvb;
+      inline-size: calc(100% - 32px);
+      margin-inline: auto;
+      margin-block: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
-      margin-block-end: 48px;
+      gap: 16px;
     }
 
-    header * {
+    section.info {
+      margin-block-start: 16px;
+    }
+
+    p {
       margin: 0;
     }
 
+    h1 {
+      margin: 0;
+      margin-block-end: 24px;
+      font-size: 2rem;
+    }
+
+    .source {
+      margin-block-start: 24px;
+    }
+
+    a {
+      color: hsl(216deg 50% 40%);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:focus {
+      text-decoration: underline 0.1em;
+      text-underline-offset: 0.15em;
+    }
+
     main {
-      inline-size: min(1080px, 100% - 32px);
-      margin-inline: auto;
+      margin-block-end: 16px;
     }
 
     form {
@@ -36,23 +72,50 @@
       gap: 8px;
     }
 
-    form * {
-      inline-size: fit-content;
+    input {
+      font-size: 1rem;
     }
 
     input[type="checkbox"] {
       margin: 0;
     }
 
-    .disclaimer {
-      font-size: 1.25rem;
-      font-weight: 700;
+    button {
+      font-size: 1rem;
+      border: 1px solid hsl(216deg 50% 50%);
+      border-radius: 4px;
+      padding: 4px 8px;
+      transition: filter 400ms;
+    }
+
+    :is(label, input, button):is(:hover, :focus) {
+      cursor: pointer;
+      filter: brightness(105%);
+      transition: filter 200ms;
+    }
+
+    .card {
+      align-self: center;
+      inline-size: min(60ch, 100% - 32px);
+      background: hsl(216deg 50% 85%);
+      border: 1px solid hsl(216deg 50% 50%);
+      border-radius: 4px;
+      padding: 16px;
+    }
+
+    .disclaimer,
+    .privacy,
+    .directions {
+      color: hsl(216deg 50% 25%);
+    }
+
+    .directions {
+      margin-block-end: 24px;
     }
 
     .inline-container {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 4px;
     }
 
@@ -62,7 +125,7 @@
       block-size: 1em;
       inline-size: 1em;
       border: 0.25em solid transparent;
-      border-block-start: 0.25em solid black;
+      border-block-start: 0.25em solid hsl(216deg 50% 40%);
       border-radius: 50%;
       animation: spin 1s infinite;
     }
