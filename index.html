@@ -93,10 +93,15 @@
       transition: filter 400ms;
     }
 
-    :is(label, input, button, input::file-selector-button):is(:hover, :focus) {
+    :is(label, input, button:not(:disabled), input::file-selector-button):is(:hover, :focus) {
       cursor: pointer;
       filter: brightness(105%);
       transition: filter 200ms;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      background: hsl(216deg 5% 85% / 0.9);
     }
 
     .card {
