@@ -83,7 +83,8 @@
       margin: 0;
     }
 
-    button {
+    button,
+    input::file-selector-button {
       font-size: 1rem;
       border: 1px solid hsl(216deg 50% 50%);
       border-radius: 4px;
@@ -91,7 +92,7 @@
       transition: filter 400ms;
     }
 
-    :is(label, input, button):is(:hover, :focus) {
+    :is(label, input, button, input::file-selector-button):is(:hover, :focus) {
       cursor: pointer;
       filter: brightness(105%);
       transition: filter 200ms;
