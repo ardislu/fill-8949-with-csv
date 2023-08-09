@@ -95,8 +95,10 @@
       margin: 0;
     }
 
+    select,
     button,
     input::file-selector-button {
+      inline-size: fit-content;
       color: inherit;
       font-size: 1rem;
       border: 1px solid hsl(216deg 50% 50%);
@@ -105,7 +107,7 @@
       transition: filter 400ms;
     }
 
-    :is(label, input, button:not(:disabled), input::file-selector-button):is(:hover, :focus) {
+    :is(label, select, input, button:not(:disabled), input::file-selector-button):is(:hover, :focus) {
       cursor: pointer;
       filter: brightness(105%);
       transition: filter 200ms;
@@ -183,6 +185,20 @@
     </ol>
     </p>
     <form>
+      <label for="year">Tax year</label>
+      <select id="year" name="year">
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+        <option value="2019">2019</option>
+        <option value="2018">2018</option>
+        <option value="2017">2017</option>
+        <option value="2016">2016</option>
+        <option value="2015">2015</option>
+        <option value="2014">2014</option>
+        <option value="2013">2013</option>
+      </select>
+
       <label for="short">Short-term transactions</label>
       <input type="file" id="short" name="short" accept="text/csv" required>
 
@@ -204,7 +220,6 @@
   <script type="module">
     import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
     import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
-    const f8949Bytes = await fetch('/f8949.pdf').then(r => r.arrayBuffer());
 
     const button = document.querySelector('button');
     const spinner = document.querySelector('span.inline-spinner');
@@ -252,7 +267,7 @@
       return page;
     }
 
-    async function generate8949(shortData, longData) {
+    async function generate8949(f8949Bytes, year, shortData, longData) {
       const f8949 = await PDFDocument.load(f8949Bytes);
       const pagePromises = [];
       const chunkSize = 14;
@@ -274,7 +289,7 @@
       f8949.removePage(0);
       f8949.removePage(0);
 
-      return f8949.save().then(data => new File([data.buffer], 'f8949_filled', { type: 'application/pdf' }));
+      return f8949.save().then(data => new File([data.buffer], `f8949_${year}_filled`, { type: 'application/pdf' }));
     }
 
     function download(file) {
@@ -316,12 +331,17 @@
       spinner.style.display = 'inline-block';
 
       const form = new FormData(e.target);
+      const year = form.get('year');
       const shortFile = form.get('short');
       const longFile = form.get('long');
       const hasHeaders = form.get('headers') === 'on';
-      const [shortData, longData] = await Promise.all([parseCsv(shortFile, hasHeaders), parseCsv(longFile, hasHeaders)]);
+      const [f8949Bytes, shortData, longData] = await Promise.all([
+        fetch(`/forms/f8949--${year}.pdf`).then(r => r.arrayBuffer()),
+        parseCsv(shortFile, hasHeaders),
+        parseCsv(longFile, hasHeaders)
+      ]);
 
-      await generate8949(shortData, longData).then(download);
+      await generate8949(f8949Bytes, year, shortData, longData).then(download);
 
       button.disabled = false;
       spinner.style.display = 'none';
