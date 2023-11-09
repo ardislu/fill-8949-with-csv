@@ -112,15 +112,17 @@
       transition: filter 400ms;
     }
 
-    :is(label, select, input, button:not(:disabled), input::file-selector-button):is(:hover, :focus) {
+    :is(label, select, input, button, input::file-selector-button):is(:hover, :focus) {
       cursor: pointer;
       filter: brightness(105%);
       transition: filter 200ms;
     }
 
-    button:disabled {
+    [data-submitting] button {
       cursor: not-allowed;
       background: hsl(216deg 5% 85% / 0.9);
+      filter: unset;
+      transition: unset;
     }
 
     ol {
@@ -332,7 +334,10 @@
     document.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();
 
-      button.disabled = true;
+      if (e.target.hasAttribute('data-submitting')) {
+        return;
+      }
+      e.target.setAttribute('data-submitting', '');
       spinner.style.display = 'inline-block';
 
       const form = new FormData(e.target);
@@ -348,8 +353,8 @@
 
       await generate8949(f8949Bytes, year, shortData, longData).then(download);
 
-      button.disabled = false;
       spinner.style.display = 'none';
+      e.target.removeAttribute('data-submitting');
     });
   </script>
 </body>
