@@ -1,7 +1,7 @@
 # fill-8949-with-csv
 
 > [!IMPORTANT]<br>
-> This tool is for informational purposes only. This tool should not be relied on for tax, legal, or accounting advice.
+> The author of this tool is not responsible for any errors or omissions, or for the results obtained from the use of this tool. All outputs are provided "as is", with no guarantee of completeness, accuracy, or of the results obtained from the use of this tool, and without warranty of any kind. The output from this tool is provided with the understanding that the author is not herein engaged in rendering legal, accounting, tax, or other professional advice and services.
 
 Web app that fills [IRS Form 8949](https://www.irs.gov/form8949) with data from a CSV file.
 
