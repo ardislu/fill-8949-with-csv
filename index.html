@@ -240,14 +240,13 @@
     const spinner = document.querySelector('span.inline-spinner');
 
     // Use a custom id generator instead of crypto.randomUUID() to reduce PDF file size
-    function* idGenerator() {
+    const annotationIds = (function* () {
       let i = 0;
       while (true) {
         yield `f${i}`; // Must be unique within the PDF
         i++;
       }
-    }
-    const annotationIds = idGenerator();
+    })();
 
     // Duplicate all annotations exactly, except for the "T" key. The "T" key ("text label") is used
     // as a unique identifier for the annotation and must be updated or else all annotations with
@@ -319,8 +318,8 @@
         Papa.parse(file, {
           header: false,
           skipEmptyLines: 'greedy',
-          complete: results => resolve(results),
-          error: error => reject(error)
+          complete: resolve,
+          error: reject
         });
       });
 
