@@ -16,7 +16,7 @@
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm" integrity="sha512-zXm1vUBeMKCaOD/k7+ZuIcu52XuFjxUoRvE7RO4ucwByu+lmHgrWJ7+UZWvu3ZuT4xbIhVTCmMGuldl3aacbuQ==">
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm" integrity="sha512-WcxsszaxLETiivygDpg7OcD83NMD2ReEeX1ykybaBipmS4IogyxOPusnRhc8zJivmiuhsMSEjb1UuqPHkadlcA==">
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/tslib@1.14.1/+esm" integrity="sha512-PjUZElt83TM9Zhy4BvJEGH7PFDYnS0YK8zcPhiEbGhhnpSeF7reQT6hJffr1dUvpaUXRSXhQNiiDsEYV70AibQ==">
-  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/pako@1.0.11/+esm" integrity="sha512-dzUWc9wR1szqZpiAxxG+ANwPk9cub+zYOvLA+7nZhBzJeGSptbLGknoFp0xBPIajh1ZGZv+1k0LH/Tsfl7cZgw==" >
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/pako@1.0.11/+esm" integrity="sha512-dzUWc9wR1szqZpiAxxG+ANwPk9cub+zYOvLA+7nZhBzJeGSptbLGknoFp0xBPIajh1ZGZv+1k0LH/Tsfl7cZgw==">
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@pdf-lib/standard-fonts@1.0.0/+esm" integrity="sha512-z92PAVk7zbA9fwpajobmkYbyY5YVkXNX4GDXH3n35bBq7e+/rrKNqE6f8MfCfgrhmaNClFNODZKBzFwwIElNaA==">
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@pdf-lib/upng@1.0.1/+esm" integrity="sha512-Jy49YborI6uYW9u8KUmV0icB5xnkDKsxGPHqGokrq36cY9uX/KZRNiRm0Cv2ntNOYdV2adzjgsSfIGsJgwEyvw==">
   <title>Fill IRS Form 8949 with CSV</title>
@@ -95,15 +95,25 @@
       inline-size: fit-content;
     }
 
+    label:not([for="headers"]) {
+      /* Expand clickable area to cover flex gap */
+      padding-block-end: 8px;
+      margin-block-end: -8px;
+    }
+
+    label[for="headers"] {
+      padding-inline-start: 4px;
+      margin-inline-start: -4px;
+    }
+
     input {
       inline-size: fit-content;
       font-size: 1rem;
-      /* Expand clickable area to cover flex gap */
-      padding-block-start: 8px;
-      margin-block-start: -8px;
     }
 
     input[type="checkbox"] {
+      width: 16px;
+      aspect-ratio: 1;
       margin: 0;
     }
 
