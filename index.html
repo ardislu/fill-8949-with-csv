@@ -300,9 +300,15 @@
         const chunk = shortData.slice(i, i + chunkSize);
         pagePromises.push(generatePage(f8949, chunk, 'short'));
       }
+      if (shortData.length === 0) { // Push a blank page
+        pagePromises.push(f8949.copyPages(f8949, [0]).then(p => p[0]));
+      }
       for (let i = 0; i < longData.length; i += chunkSize) {
         const chunk = longData.slice(i, i + chunkSize);
         pagePromises.push(generatePage(f8949, chunk, 'long'));
+      }
+      if (longData.length === 0) { // Push a blank page
+        pagePromises.push(f8949.copyPages(f8949, [1]).then(p => p[0]));
       }
       const pages = await Promise.all(pagePromises);
 
