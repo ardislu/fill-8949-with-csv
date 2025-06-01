@@ -245,7 +245,7 @@
 
   <script type="module">
     import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
-    import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
+    import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString, PDFBool } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
 
     const button = document.querySelector('button');
     const spinner = document.querySelector('span.inline-spinner');
@@ -266,6 +266,9 @@
     function cloneAnnotations(page) {
       const form = page.doc.catalog.lookup(PDFName.of('AcroForm'), PDFDict);
       const fields = form.lookup(PDFName.of('Fields'), PDFArray);
+
+      form.set(PDFName.of('NeedAppearances'), PDFBool.True);
+
       const annotations = page.node.Annots();
       for (let i = 0; i < annotations.size(); i++) {
         const a = annotations.lookup(i, PDFDict);
@@ -288,7 +291,6 @@
           cellNumber++;
         }
       }
-
       return page;
     }
 
@@ -375,7 +377,8 @@
         parseCsv(longFile, hasHeaders)
       ]);
 
-      await generate8949(f8949Bytes, year, shortData, longData).then(download);
+      const file = await generate8949(f8949Bytes, year, shortData, longData);
+      download(file);
 
       spinner.style.display = 'none';
       e.target.removeAttribute('data-submitting');
