@@ -211,6 +211,7 @@
     <form>
       <label for="year">Tax year</label>
       <select id="year" name="year">
+        <option value="2025">2025</option>
         <option value="2024">2024</option>
         <option value="2023">2023</option>
         <option value="2022">2022</option>
@@ -277,12 +278,11 @@
       }
     };
 
-    async function generatePage(f8949, data, type) {
+    async function generatePage(f8949, data, type, offset) {
       const [page] = type === 'short' ? await f8949.copyPages(f8949, [0]) : await f8949.copyPages(f8949, [1]);
       cloneAnnotations(page);
 
       let cellNumber = 0;
-      const offset = 5; // To skip to the table annotations
       const annots = page.node.Annots();
       for (const row of data) {
         for (const cell of row) {
@@ -297,17 +297,18 @@
     async function generate8949(f8949Bytes, year, shortData, longData) {
       const f8949 = await PDFDocument.load(f8949Bytes);
       const pagePromises = [];
-      const chunkSize = 14;
+      const chunkSize = Number(year) >= 2025 ? 11 : 14;
+      const offset =  Number(year) >= 2025 ? 8 : 5;
       for (let i = 0; i < shortData.length; i += chunkSize) {
         const chunk = shortData.slice(i, i + chunkSize);
-        pagePromises.push(generatePage(f8949, chunk, 'short'));
+        pagePromises.push(generatePage(f8949, chunk, 'short', offset));
       }
       if (shortData.length === 0) { // Push a blank page
         pagePromises.push(f8949.copyPages(f8949, [0]).then(p => p[0]));
       }
       for (let i = 0; i < longData.length; i += chunkSize) {
         const chunk = longData.slice(i, i + chunkSize);
-        pagePromises.push(generatePage(f8949, chunk, 'long'));
+        pagePromises.push(generatePage(f8949, chunk, 'long', offset));
       }
       if (longData.length === 0) { // Push a blank page
         pagePromises.push(f8949.copyPages(f8949, [1]).then(p => p[0]));
