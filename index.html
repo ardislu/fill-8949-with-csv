@@ -95,7 +95,9 @@
       inline-size: fit-content;
     }
 
-    label:not([for="headers"]) {
+    label[for="year"],
+    label[for="short"],
+    label[for="long"] {
       /* Expand clickable area to cover flex gap */
       padding-block-end: 8px;
       margin-block-end: -8px;
@@ -119,7 +121,8 @@
 
     select,
     button,
-    input::file-selector-button {
+    input::file-selector-button,
+    fieldset {
       inline-size: fit-content;
       color: inherit;
       font-size: 1rem;
@@ -184,6 +187,14 @@
         transform: rotate(360deg);
       }
     }
+
+    fieldset label {
+      display: block;
+
+      & input {
+        margin-inline-start: 0;
+      }
+    }
   </style>
 </head>
 
@@ -204,6 +215,7 @@
             <path d="M19 21H5" />
           </svg>template.csv</a>).</li>
       <li>Fill the templates with data to populate the tables on page 1 (short-term transactions) and page 2 (long-term transactions) of <a href="https://www.irs.gov/form8949">IRS Form 8949</a>.</li>
+      <li>If desired, select a box to check on the short-term and long-term pages.</li>
       <li>Select the filled CSV templates in the file pickers below.</li>
       <li>Click "Download Filled Form 8949" to download a copy of Form 8949 with the CSV data filled into it.</li>
     </ol>
@@ -226,8 +238,30 @@
         <option value="2013">2013</option>
       </select>
 
+      <fieldset>
+        <legend>Short-term checkbox:</legend>
+        <label><input type="radio" name="st-cb" value="none" checked>Do not check any box</label>
+        <label><input type="radio" name="st-cb" value="2">A</label>
+        <label><input type="radio" name="st-cb" value="3">B</label>
+        <label><input type="radio" name="st-cb" value="4">C</label>
+        <label><input type="radio" name="st-cb" value="5" data-2025>G</label>
+        <label><input type="radio" name="st-cb" value="6" data-2025>H</label>
+        <label><input type="radio" name="st-cb" value="7" data-2025>I</label>
+      </fieldset>
+
       <label for="short">Short-term transactions</label>
       <input type="file" id="short" name="short" accept="text/csv" required>
+
+      <fieldset>
+        <legend>Long-term checkbox:</legend>
+        <label><input type="radio" name="lt-cb" value="none" checked>Do not check any box</label>
+        <label><input type="radio" name="lt-cb" value="2">D</label>
+        <label><input type="radio" name="lt-cb" value="3">E</label>
+        <label><input type="radio" name="lt-cb" value="4">F</label>
+        <label><input type="radio" name="lt-cb" value="5" data-2025>J</label>
+        <label><input type="radio" name="lt-cb" value="6" data-2025>K</label>
+        <label><input type="radio" name="lt-cb" value="7" data-2025>L</label>
+      </fieldset>
 
       <label for="long">Long-term transactions</label>
       <input type="file" id="long" name="long" accept="text/csv" required>
@@ -281,9 +315,24 @@
     async function generatePage(f8949, data, type, offset) {
       const [page] = type === 'short' ? await f8949.copyPages(f8949, [0]) : await f8949.copyPages(f8949, [1]);
       cloneAnnotations(page);
+      const annots = page.node.Annots();
+
+      const formData = new FormData(document.querySelector('form'));
+      const checkbox = type === 'short' ? formData.get('st-cb') : formData.get('lt-cb');
+      if (checkbox !== 'none') {
+        const box = annots.lookup(Number(checkbox), PDFDict);
+
+        // The checkbox value is not simply "Yes" like noted in the GitHub issue, it must match the AP.D[0] key *name*.
+        // I do not know how/why this works, I figured it out by manually checking the boxes and then seeing what changed
+        // in the PDF data.
+        const value = box.get(PDFName.of('AP')).get(PDFName.of('D')).dict.keys().next().value.encodedName.substring(1);
+
+        // Need to set both AS and V to check the box: https://github.com/Hopding/pdf-lib/issues/109
+        box.set(PDFName.of('AS'), PDFName.of(value));
+        box.set(PDFName.of('V'), PDFName.of(value));
+      }
 
       let cellNumber = 0;
-      const annots = page.node.Annots();
       for (const row of data) {
         for (const cell of row) {
           const a = annots.lookup(cellNumber + offset, PDFDict);
@@ -298,7 +347,7 @@
       const f8949 = await PDFDocument.load(f8949Bytes);
       const pagePromises = [];
       const chunkSize = Number(year) >= 2025 ? 11 : 14;
-      const offset =  Number(year) >= 2025 ? 8 : 5;
+      const offset = Number(year) >= 2025 ? 8 : 5;
       for (let i = 0; i < shortData.length; i += chunkSize) {
         const chunk = shortData.slice(i, i + chunkSize);
         pagePromises.push(generatePage(f8949, chunk, 'short', offset));
@@ -349,6 +398,11 @@
       }
       return data;
     }
+
+    document.querySelector('#year').addEventListener('change', e => {
+      const boxes = document.querySelectorAll('label:has(input[data-2025])');
+      Number(e.target.value) >= 2025 ? boxes.forEach(b => b.style.display = 'block') : boxes.forEach(b => b.style.display = 'none');
+    });
 
     document.querySelector('#template-link').addEventListener('click', e => {
       e.preventDefault();
