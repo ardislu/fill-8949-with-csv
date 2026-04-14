@@ -195,10 +195,25 @@
         margin-inline-start: 0;
       }
     }
+
+    .warning.info.card {
+      display: none;
+
+      & p {
+        margin-block-end: 16px;
+      }
+    }
   </style>
 </head>
 
 <body>
+  <section class="warning info card">
+    <h1>Warning</h1>
+    <p>It looks like you have accessed this webpage by directly opening the <code>index.html</code> file. This webpage contains code which will not work unless this repository is served from a web server.</p>
+    <p>If you have Python installed, you can serve this webpage from a local web server by running this command in the same folder where the <code>index.html</code> file is:</p>
+    <code>python -m http.server</code>
+  </section>
+
   <section class="info card">
     <h1>Fill IRS Form 8949 with CSV</h1>
     <p class="disclaimer"><b>Disclaimer:</b> the author of this tool is not responsible for any errors or omissions, or for the results obtained from the use of this tool. All outputs are provided "as is", with no guarantee of completeness, accuracy, or of the results obtained from the use of this tool, and without warranty of any kind. The output from this tool is provided with the understanding that the author is not herein engaged in rendering legal, accounting, tax, or other professional advice and services.</p>
@@ -281,6 +296,11 @@
   <script type="module">
     import Papa from 'https://cdn.jsdelivr.net/npm/papaparse@5.4.1/+esm';
     import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString, PDFBool } from 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm';
+
+    if (location.protocol === 'file:') {
+      document.querySelector('.warning.info.card').style.setProperty('display', 'block');
+      document.querySelectorAll('.card:not(.warning)').forEach(c => c.style.setProperty('display', 'none'));
+    }
 
     const button = document.querySelector('button');
     const spinner = document.querySelector('span.inline-spinner');
