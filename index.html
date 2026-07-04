@@ -306,12 +306,9 @@
     const spinner = document.querySelector('span.inline-spinner');
 
     // Use a custom id generator instead of crypto.randomUUID() to reduce PDF file size
-    const annotationIds = (function* () {
+    const annotationIds = (() => {
       let i = 0;
-      while (true) {
-        yield `f${i}`; // Must be unique within the PDF
-        i++;
-      }
+      return () => `f${i++}`; // Must be unique within the PDF
     })();
 
     // Duplicate all annotations exactly, except for the "T" key. The "T" key ("text label") is used
@@ -327,7 +324,7 @@
       const annotations = page.node.Annots();
       for (let i = 0; i < annotations.size(); i++) {
         const a = annotations.lookup(i, PDFDict);
-        a.set(PDFName.of('T'), PDFString.of(annotationIds.next().value));
+        a.set(PDFName.of('T'), PDFString.of(annotationIds()));
         fields.push(a);
       }
     };
